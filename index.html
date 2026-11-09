@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="midnight">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catatan Pendapatan</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f5f9;--card:#fff;--line:#dde2ea;--mut:#6b7280;--txt:#111827;--acc:#2563eb;--accl:#dbe7ff;--in:#15803d;--out:#b91c1c;--inp:#fff;color-scheme:light}
+:root[data-theme=gelap]{--bg:#121417;--card:#1c2026;--line:#2d333b;--mut:#9aa4b2;--txt:#e5e7eb;--accl:#1e3a5f;--in:#4ade80;--out:#f87171;--inp:#14171b;color-scheme:dark}
+:root[data-theme=midnight]{--bg:#0f0a1f;--card:#1a1233;--line:#33284f;--mut:#a79cc4;--txt:#ede9fe;--acc:#7c3aed;--accl:#3b2a6b;--in:#4ade80;--out:#fb7185;--inp:#130d29;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:720px;margin:0 auto;padding:12px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.sp{justify-content:space-between}
+button,input,select{font:inherit;color:var(--txt);background:var(--inp);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+button{cursor:pointer;background:var(--card)}button.p{background:var(--acc);border-color:var(--acc);color:#fff}
+input,select{width:100%}label{font-size:12px;color:var(--mut);display:block;margin:8px 0 3px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+h1{font-size:18px;margin:0}.m{font-size:18px;font-weight:700;text-align:center;flex:1;min-width:140px}
+.big{font-size:26px;font-weight:700}.in{color:var(--in)}.out{color:var(--out)}.mut{color:var(--mut);font-size:12px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}.row b{display:block}.x{border:0;background:none;color:var(--mut);padding:4px 8px}
+.seg{display:flex;gap:8px}.seg label{flex:1;margin:0;border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;cursor:pointer;color:var(--txt);font-size:14px}
+.seg input{display:none}.seg input:checked+span{font-weight:700;color:var(--acc)}
+.seg label:has(input:checked){background:var(--accl);border-color:var(--acc)}
+#st{min-height:18px;margin:6px 2px}[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="w">
+ <div class="c r sp"><h1>Catatan Pendapatan</h1>
+  <div class="r"><button id="syn" title="Muat ulang dari GitHub">⟳</button><button id="cfgb" title="Pengaturan sinkron">⚙</button>
+  <select id="tema" style="width:auto"><option value="terang">Terang</option><option value="gelap">Gelap</option><option value="midnight">Midnight Purple</option></select></div></div>
+
+ <div class="c" id="cfg" hidden>
+  <b>Sambungkan ke GitHub</b>
+  <label>Repo data (pemilik/nama, contoh: namaku/catatan-data)</label><input id="crepo" autocomplete="off" autocapitalize="off">
+  <label>Token GitHub (akses Contents: baca &amp; tulis ke repo itu)</label><input id="ctok" type="password" autocomplete="off">
+  <div class="g"><div><label>Nama file</label><input id="cpath" value="pendapatan.json"></div><div><label>Branch</label><input id="cbr" value="main"></div></div>
+  <div class="r" style="margin-top:12px"><button class="p" id="csv">Simpan &amp; Muat</button><button id="ccl">Tutup</button><button id="cof" class="x">Putuskan</button></div>
+  <div class="mut" style="margin-top:8px">Token hanya disimpan di browser perangkat ini.</div>
+ </div>
+
+ <div id="app" hidden>
+ <div class="c">
+  <div class="r"><button id="pv">◀</button><div class="m" id="bln"></div><button id="nx">▶</button></div>
+  <div class="r" style="margin-top:6px"><button id="all">Semua waktu</button></div>
+  <div style="text-align:right;margin-top:8px"><div class="mut">Saldo</div><div class="big" id="tot">Rp 0</div>
+   <span class="in" id="msk"></span> &nbsp; <span class="out" id="klr"></span></div>
+ </div>
+ <div class="c">
+  <div class="seg"><label><input type="radio" name="j" value="masuk" checked><span>Pemasukan</span></label>
+   <label><input type="radio" name="j" value="keluar"><span>Pengeluaran</span></label></div>
+  <div class="g"><div><label>Tanggal</label><input id="tg" type="date"></div><div><label>Jumlah (Rp)</label><input id="jm" inputmode="numeric" placeholder="50000"></div></div>
+  <label id="ls">Sumber</label><input id="sm" autocomplete="off">
+  <label>Catatan</label><input id="ct" autocomplete="off">
+  <div class="r" style="margin-top:12px"><button class="p" id="add" style="flex:1">Tambah</button><button id="bt" hidden>Batal</button></div>
+ </div>
+ <div class="c" id="list"></div>
+ </div>
+ <div id="st" class="mut"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const BL=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+let cfg=null,data=[],bulan,edit=null,sibuk=false;
+const rp=n=>(n<0?"-":"")+"Rp "+Math.abs(n).toLocaleString("id-ID");
+const pad=n=>String(n).padStart(2,"0");
+const now=new Date(),iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+bulan=now.getFullYear()+"-"+pad(now.getMonth()+1);
+const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);v===null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){return null}};
+function setTema(t){document.documentElement.dataset.theme=t;$("tema").value=t;ls("cp_tema",t)}
+setTema(ls("cp_tema")||"midnight");$("tema").onchange=e=>setTema(e.target.value);
+function pesan(t,err){const s=$("st");s.textContent=t;s.style.color=err?"var(--out)":"var(--in)";clearTimeout(pesan.t);pesan.t=setTimeout(()=>{s.textContent=""},6000)}
+const jenis=()=>document.querySelector("input[name=j]:checked").value;
+function labelSumber(){$("ls").textContent=jenis()=="keluar"?"Keperluan":"Sumber"}
+document.querySelectorAll("input[name=j]").forEach(r=>r.onchange=labelSumber);
+$("tg").value=iso(now);
+
+/* ---------- GitHub ---------- */
+const dec=b=>new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g,"")),c=>c.charCodeAt(0)));
+const enc=s=>{let b="";new TextEncoder().encode(s).forEach(x=>b+=String.fromCharCode(x));return btoa(b)};
+const url=()=>"https://api.github.com/repos/"+cfg.repo+"/contents/"+(cfg.path||"pendapatan.json");
+const branch=()=>cfg.branch||"main";
+async function gh(method,body,qs){
+ try{return await fetch(url()+(qs||""),{method,cache:"no-store",headers:{Authorization:"Bearer "+cfg.token,Accept:"application/vnd.github+json","Content-Type":"application/json"},body:body?JSON.stringify(body):undefined})}
+ catch(e){throw new Error("Tidak bisa terhubung ke GitHub (cek internet).")}}
+function galat(r){return new Error(r.status==401||r.status==403?"Token ditolak atau tidak punya izin.":r.status==404?"Repo tidak ditemukan (cek nama repo dan izin token).":"GitHub membalas galat "+r.status+".")}
+async function ambil(){
+ const r=await gh("GET",null,"?ref="+encodeURIComponent(branch()));
+ if(r.status==404)return{list:[],sha:null};
+ if(!r.ok)throw galat(r);
+ const j=await r.json(),l=JSON.parse(dec(j.content)||"[]");return{list:Array.isArray(l)?l:[],sha:j.sha}}
+/* Ambil data terbaru, terapkan perubahan, kirim; kalau PC/HP lain menulis lebih dulu, ulangi. */
+async function ubah(fn,msg){
+ for(let i=0;i<4;i++){
+  const a=await ambil(),baru=fn(a.list);
+  const body={message:msg,branch:branch(),content:enc(JSON.stringify(baru,null,2))};if(a.sha)body.sha=a.sha;
+  const r=await gh("PUT",body);
+  if(r.ok){data=baru;tampil();return}
+  if(r.status!=409&&r.status!=422)throw galat(r)}
+ throw new Error("Data berubah terus, coba lagi sebentar lagi.")}
+async function muat(diam){
+ if(!cfg||sibuk)return;sibuk=true;
+ try{const a=await ambil();if(JSON.stringify(a.list)!=JSON.stringify(data)){data=a.list;tampil()}if(!diam)pesan("✓ Data terbaru dimuat.")}
+ catch(e){if(!diam)pesan(e.message,1)}finally{sibuk=false}}
+
+/* ---------- tampilan ---------- */
+function geser(d){if(!bulan)return;let[y,m]=bulan.split("-").map(Number);m+=d;if(m<1){m=12;y--}if(m>12){m=1;y++}bulan=y+"-"+pad(m);tampil()}
+$("pv").onclick=()=>geser(-1);$("nx").onclick=()=>geser(1);
+$("all").onclick=()=>{bulan=bulan?null:now.getFullYear()+"-"+pad(now.getMonth()+1);tampil()};
+function tampil(){
+ $("bln").textContent=bulan?BL[+bulan.slice(5)-1]+" "+bulan.slice(0,4):"Semua waktu";
+ $("all").textContent=bulan?"Semua waktu":"Per bulan";
+ const L=data.filter(d=>!bulan||String(d.tanggal).startsWith(bulan)).sort((a,b)=>b.tanggal.localeCompare(a.tanggal)||b.id-a.id);
+ const m=L.filter(d=>d.jenis!="keluar").reduce((s,d)=>s+d.jumlah,0),k=L.filter(d=>d.jenis=="keluar").reduce((s,d)=>s+d.jumlah,0);
+ $("tot").textContent=rp(m-k);$("tot").className="big "+(m-k<0?"out":"in");
+ $("msk").textContent="+ "+rp(m);$("klr").textContent="− "+rp(k);
+ const box=$("list");box.textContent="";
+ if(!L.length){box.innerHTML='<div class="mut" style="text-align:center;padding:14px">Belum ada catatan di sini.</div>';return}
+ L.forEach(d=>{const r=document.createElement("div");r.className="row";
+  const a=document.createElement("div"),b=document.createElement("div");
+  const s=document.createElement("b");s.textContent=d.sumber;
+  const t=document.createElement("span");t.className="mut";t.textContent=String(d.tanggal).split("-").reverse().join("/")+(d.catatan?" · "+d.catatan:"");
+  a.append(s,t);
+  const j=document.createElement("b");j.className=d.jenis=="keluar"?"out":"in";j.textContent=(d.jenis=="keluar"?"− ":"+ ")+rp(d.jumlah);
+  const e=document.createElement("button");e.className="x";e.textContent="✎";e.title="Edit";e.onclick=()=>mulaiEdit(d);
+  const x=document.createElement("button");x.className="x";x.textContent="✕";x.title="Hapus";
+  x.onclick=async()=>{if(!confirm("Hapus catatan ini?"))return;try{await ubah(l=>l.filter(y=>y.id!==d.id),"Hapus catatan dari web");pesan("✓ Terhapus.")}catch(er){pesan(er.message,1)}};
+  b.style.textAlign="right";b.append(j,e,x);r.append(a,b);box.append(r)})}
+function mulaiEdit(d){edit=d.id;document.querySelector("input[name=j][value="+(d.jenis=="keluar"?"keluar":"masuk")+"]").checked=true;labelSumber();
+ $("tg").value=d.tanggal;$("jm").value=d.jumlah;$("sm").value=d.sumber;$("ct").value=d.catatan||"";
+ $("add").textContent="Simpan perubahan";$("bt").hidden=false;scrollTo({top:0,behavior:"smooth"})}
+function selesaiEdit(){edit=null;$("sm").value="";$("jm").value="";$("ct").value="";$("add").textContent="Tambah";$("bt").hidden=true}
+$("bt").onclick=selesaiEdit;
+$("add").onclick=async()=>{
+ const sumber=$("sm").value.trim(),jumlah=parseInt($("jm").value.replace(/\D/g,""),10),tanggal=$("tg").value;
+ if(!sumber)return pesan("Isi sumber/keperluan dulu.",1);
+ if(!jumlah||jumlah<=0)return pesan("Jumlah harus berupa angka lebih dari 0.",1);
+ if(!tanggal)return pesan("Isi tanggal dulu.",1);
+ const isi={jenis:jenis(),tanggal,sumber,jumlah,catatan:$("ct").value.trim()},id=edit;
+ $("add").disabled=true;
+ try{await ubah(l=>id?l.map(d=>d.id===id?{...d,...isi}:d):[...l,{id:Math.max(0,...l.map(d=>d.id))+1,...isi}],id?"Edit catatan dari web":"Tambah catatan dari web");
+  selesaiEdit();pesan("✓ Tersimpan dan tersinkron.");$("sm").focus()}catch(e){pesan(e.message,1)}finally{$("add").disabled=false}};
+
+/* ---------- pengaturan ---------- */
+function tampilApp(){const ada=!!cfg;$("app").hidden=!ada;$("cfg").hidden=ada}
+$("cfgb").onclick=()=>{$("cfg").hidden=!$("cfg").hidden};$("ccl").onclick=()=>{$("cfg").hidden=!!cfg};
+$("syn").onclick=()=>cfg?muat(false):($("cfg").hidden=false);
+$("csv").onclick=()=>{
+ const repo=$("crepo").value.trim(),token=$("ctok").value.trim();
+ if(!/^[^\s/]+\/[^\s/]+$/.test(repo)||!token)return pesan("Isi repo (pemilik/nama) dan token dulu.",1);
+ cfg={repo,token,path:$("cpath").value.trim()||"pendapatan.json",branch:$("cbr").value.trim()||"main"};
+ ls("cp_cfg",JSON.stringify(cfg));tampilApp();$("cfg").hidden=true;muat(false)};
+$("cof").onclick=()=>{if(confirm("Putuskan sinkron di perangkat ini? Data di GitHub tidak dihapus.")){ls("cp_cfg",null);cfg=null;data=[];$("ctok").value="";tampilApp();$("cfg").hidden=false}};
+try{cfg=JSON.parse(ls("cp_cfg")||"null")}catch(e){cfg=null}
+if(cfg){$("crepo").value=cfg.repo;$("ctok").value=cfg.token;$("cpath").value=cfg.path;$("cbr").value=cfg.branch}
+tampilApp();tampil();muat(true);
+setInterval(()=>{if(!document.hidden&&!edit)muat(true)},60000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!edit)muat(true)});
+</script>
+</body>
+</html>
